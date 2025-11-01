@@ -1,25 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>World Macro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
-:root{--base-font:10px}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#eef;color:#111;text-align:center}
 h1{margin:8px 0;font-size:20px}
 #controls{padding:8px}
 select{padding:9px 12px;font-size:12px;border-radius:6px;border:1px solid #bbb;background:#fff;margin-right:6px}
-#map{height:72vh;max-height:800px;width:95%;max-width:1200px;margin:12px auto;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.15);background:#fff}
-.pin{white-space:nowrap;display:flex;flex-direction:column;align-items:center;padding:4px 6px;border-radius:4px;background:rgba(255,255,255,0.65);box-shadow:0 1px 2px rgba(0,0,0,.12);pointer-events:auto;text-align:center;border:1px solid rgba(0,0,0,.06);font-size:var(--fs,12px)}
-.pin img{width:18px;height:12px;display:inline-block;margin-bottom:2px}
+#map{height:72vh;max-height:800px;width:95%;max-width:1200px;margin:12px auto;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.pin{white-space:nowrap;display:flex;flex-direction:column;align-items:center;padding:4px 6px;border-radius:4px;background:rgba(255,255,255,0.65);box-shadow:0 1px 2px rgba(0,0,0,.12);text-align:center;border:1px solid rgba(0,0,0,.06);font-size:var(--fs,12px)}
+.pin img{width:18px;height:12px;margin-bottom:2px}
 #status{font-size:11px;color:#555;margin-top:5px}
-#source{font-size:10px;color:#555;margin:6px auto;max-width:800px;}
-#source a{color:#2b7cff;text-decoration:none;}
+#source{font-size:10px;color:#555;margin:6px auto;max-width:800px}
+#source a{color:#2b7cff;text-decoration:none}
 </style>
 </head>
 <body>
-
 <h1>World Macro</h1>
 
 <div id="controls">
@@ -30,193 +28,61 @@ select{padding:9px 12px;font-size:12px;border-radius:6px;border:1px solid #bbb;b
   <option value="Infl">Inflation (%)</option>
   <option value="Unemp">Unemployment (%)</option>
 </select>
-<select id="year">
-  <option>–</option>
-</select>
+<select id="year"><option>–</option></select>
 </div>
 
 <div id="map"></div>
-
-<div id="source">
-  Data source: <a href="https://data.worldbank.org/" target="_blank">World Bank</a>
-</div>
-
+<div id="source">Data source: <a href="https://data.worldbank.org/" target="_blank">World Bank</a></div>
 <div id="status">Ready.</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-// ===== positions from Code 1 (country name,url,flag,lat,lon,ISO,area,currency,plug) =====
-const COUNTRIES=[
-["Algeria","", "",28.0,1.66,"DZ"],["Libya","", "",26.34,17.23,"LY"],["Tunisia","", "",33.8869,9.5375,"TN"],
-["Egypt","", "",26.82,30.8,"EG"],["Morocco","", "",32.0,-5.0,"MA"],["Mauritania","", "",21.0,-10.94,"MR"],
-["Sudan","", "",15.0,30.0,"SD"],["Western Sahara","", "",24.2155,-12.8858,"EH"],["Angola","", "",-12.5,18.5,"AO"],
-["Benin","", "",9.5,2.25,"BJ"],["Botswana","", "",-22.0,24.0,"BW"],["Burundi","", "",-3.5,30.0,"BI"],
-["Cameroon","", "",6.0,12.0,"CM"],["Côte d'Ivoire","", "",8.0,-5.0,"CI"],["Eritrea","", "",15.0,39.0,"ER"],
-["Ethiopia","", "",8.0,38.0,"ET"],["Gabon","", "",-1.0,11.75,"GA"],["Ghana","", "",8.0,-2.0,"GH"],
-["Guinea","", "",11.0,-10.0,"GN"],["Kenya","", "",1.0,38.0,"KE"],["Liberia","", "",6.5,-9.5,"LR"],
-["Madagascar","", "",-20.0,47.0,"MG"],["Malawi","", "",-13.5,34.0,"MW"],["Mauritius","", "",-20.2833,57.55,"MU"],
-["Mozambique","", "",-18.25,35.0,"MZ"],["Namibia","", "",-22.0,17.0,"NA"],["Nigeria","", "",10.0,8.0,"NG"],
-["Rwanda","", "",-2.0,30.0,"RW"],["Senegal","", "",14.0,-14.0,"SN"],["South Africa","", "",-29.0,24.0,"ZA"],
-["Sierra Leone","", "",8.5,-11.5,"SL"],["Tanzania","", "",-6.0,35.0,"TZ"],["Uganda","", "",1.0,32.0,"UG"],
-["Zambia","", "",-15.0,30.0,"ZM"],["Zimbabwe","", "",-20.0,30.0,"ZW"],
-["Argentina","", "",-34.0,-64.0,"AR"],["Belize","", "",17.25,-88.75,"BZ"],["Bolivia","", "",-17.0,-65.0,"BO"],
-["Brazil","", "",-10.0,-55.0,"BR"],["Canada","", "",60.0,-95.0,"CA"],["Chile","", "",-30.0,-71.0,"CL"],
-["Colombia","", "",4.0,-72.0,"CO"],["Costa Rica","", "",10.0,-84.0,"CR"],["Cuba","", "",21.5,-80.0,"CU"],
-["Dominican Republic","", "",19.0,-70.6667,"DO"],["Ecuador","", "",-2.0,-77.5,"EC"],["El Salvador","", "",13.8333,-88.9167,"SV"],
-["Guatemala","", "",15.5,-90.25,"GT"],["Guyana","", "",4.8604,-58.9302,"GY"],["Honduras","", "",15.0,-86.5,"HN"],
-["Jamaica","", "",18.25,-77.5,"JM"],["Mexico","", "",23.0,-102.0,"MX"],["Nicaragua","", "",13.0,-85.0,"NI"],
-["Panama","", "",9.0,-80.0,"PA"],["Paraguay","", "",-23.0,-58.0,"PY"],["Peru","", "",-10.0,-76.0,"PE"],
-["The Bahamas","", "",25.0343,-77.3963,"BS"],["Trinidad and Tobago","", "",11.0,-61.0,"TT"],
-["United States of America","", "",38.0,-97.0,"US"],["Uruguay","", "",-33.0,-56.0,"UY"],["Venezuela","", "",8.0,-66.0,"VE"],
-["Afghanistan","", "",33.0,65.0,"AF"],["Azerbaijan","", "",40.5,47.5,"AZ"],["Bangladesh","", "",24.0,90.0,"BD"],
-["Brunei Darussalam","", "",4.5,114.6667,"BN"],["Cambodia","", "",13.0,105.0,"KH"],["China","", "",35.0,105.0,"CN"],
-["Indonesia","", "",-5.0,120.0,"ID"],["India","", "",20.0,77.0,"IN"],["Iran","", "",32.0,53.0,"IR"],
-["Iraq","", "",33.0,44.0,"IQ"],["Israel","", "",31.5,34.75,"IL"],["Japan","", "",36.0,138.0,"JP"],
-["Jordan","", "",31.0,36.0,"JO"],["Kazakhstan","", "",48.0,68.0,"KZ"],["Laos","", "",18.0,105.0,"LA"],
-["Lebanon","", "",33.8333,35.8333,"LB"],["Malaysia","", "",2.5,112.5,"MY"],["Maldives","", "",3.25,73.0,"MV"],
-["Mongolia","", "",46.0,105.0,"MN"],["Myanmar","", "",22.0,98.0,"MM"],["Nepal","", "",28.0,84.0,"NP"],
-["North Korea","", "",40.3399,127.5101,"KP"],["Pakistan","", "",30.0,70.0,"PK"],["Philippines","", "",13.0,122.0,"PH"],
-["Qatar","", "",25.5,51.25,"QA"],["South Korea","", "",37.0,127.5,"KR"],["Sri Lanka","", "",7.0,81.0,"LK"],
-["Singapore","", "",1.3667,103.8,"SG"],["Syria","", "",35.0,38.0,"SY"],["Taiwan","", "",23.5,121.0,"TW"],
-["Tajikistan","", "",39.0,71.0,"TJ"],["Thailand","", "",15.0,100.0,"TH"],["Timor-Leste","", "",-8.55,125.5167,"TL"],
-["Turkmenistan","", "",40.0,60.0,"TM"],["Uzbekistan","", "",41.0,64.0,"UZ"],["Vietnam","", "",16.0,106.0,"VN"],
-["Albania","", "",41.0,20.0,"AL"],["Austria","", "",47.3333,13.3333,"AT"],["Belarus","", "",53.0,28.0,"BY"],
-["Belgium","", "",50.8333,4.0,"BE"],["Bosnia and Herzegovina","", "",44.0,18.0,"BA"],["Bulgaria","", "",43.0,25.0,"BG"],
-["Cyprus","", "",35.0,33.0,"CY"],["Czech Republic","", "",49.75,15.5,"CZ"],["Croatia","", "",45.1667,15.5,"HR"],
-["Estonia","", "",59.0,26.0,"EE"],["Finland","", "",64.0,26.0,"FI"],["France","", "",46.0,2.0,"FR"],
-["Germany","", "",51.0,9.0,"DE"],["Greece","", "",39.0,22.0,"GR"],["Hungary","", "",47.0,20.0,"HU"],
-["Iceland","", "",64.9631,-19.0208,"IS"],["Ireland","", "",53.0,-8.0,"IE"],["Italy","", "",42.8333,12.8333,"IT"],
-["Latvia","", "",57.0,25.0,"LV"],["Lithuania","", "",56.0,24.0,"LT"],["Luxembourg","", "",49.75,6.1667,"LU"],
-["Malta","", "",35.8333,14.5833,"MT"],["Moldova","", "",47.0,29.0,"MD"],["Montenegro","", "",42.0,19.0,"ME"],
-["Netherlands","", "",52.5,5.75,"NL"],["North Macedonia","", "",41.8333,22.0,"MK"],["Norway","", "",62.0,10.0,"NO"],
-["Poland","", "",52.0,20.0,"PL"],["Portugal","", "",39.5,-8.0,"PT"],["Romania","", "",46.0,25.0,"RO"],
-["Russia","", "",60.0,100.0,"RU"],["Serbia","", "",44.0,21.0,"RS"],["Slovakia","", "",48.6667,19.5,"SK"],
-["Slovenia","", "",46.0,15.0,"SI"],["Spain","", "",40.0,-4.0,"ES"],["Sweden","", "",62.0,15.0,"SE"],
-["Switzerland","", "",47.0,8.0,"CH"],["Türkiye","", "",39.0,35.0,"TR"],["Ukraine","", "",49.0,32.0,"UA"],
-["United Kingdom","", "",54.0,-2.0,"GB"],
-["Bahrain","", "",26.0,50.55,"BH"],["Kuwait","", "",29.3375,47.6581,"KW"],["Oman","", "",21.0,57.0,"OM"],
-["Saudi Arabia","", "",25.0,45.0,"SA"],["United Arab Emirates","", "",24.0,54.0,"AE"],["Yemen","", "",15.0,48.0,"YE"],
-["Australia","", "",-27.0,133.0,"AU"],["Fiji","", "",-18.0,175.0,"FJ"],["Guam","", "",13.4667,144.7833,"GU"],
-["Marshall Islands","", "",9.0,168.0,"MH"],["Niue","", "",-19.0333,-169.8667,"NU"],["New Caledonia","", "",-21.5,165.5,"NC"],
-["New Zealand","", "",-41.0,174.0,"NZ"],["Palau","", "",7.5,134.5,"PW"],["Papua New Guinea","", "",-6.0,147.0,"PG"],
-["Samoa","", "",-13.5833,-172.3333,"WS"],["Solomon Islands","", "",-8.0,159.0,"SB"],["Tonga","", "",-20.0,-175.0,"TO"],
-["Vanuatu","", "",-16.0,167.0,"VU"]
-];
-// Convert to PLACES for this app
-const PLACES = COUNTRIES.map(([n,_,__,lat,lon,iso])=>({name:n,cc:iso.toLowerCase(),code:iso.toUpperCase(),lat,lon}));
-
-// ===== Code 2 logic kept (WB pull, dropdowns, labeling, coloring) =====
 const flagURL=c=>`https://flagcdn.com/24x18/${c.toLowerCase()}.png`;
-const status=document.getElementById('status');
-const statSelect=document.getElementById('stat'),yearSelect=document.getElementById('year');
 const WB_IND={GDP:'NY.GDP.MKTP.CD',GDPpc:'NY.GDP.PCAP.CD',Infl:'FP.CPI.TOTL.ZG',Unemp:'SL.UEM.TOTL.ZS'};
 const REVERSE_GREEN=['Infl','Unemp'];
-
-const map=L.map('map',{worldCopyJump:true}).setView([20,0],2);
+const statSel=document.getElementById('stat'),yrSel=document.getElementById('year'),status=document.getElementById('status');
+const map=L.map('map',{worldCopyJump:true}).setView([15,10],2);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:"© OpenStreetMap"}).addTo(map);
 
 let markers=[];
-
-function placePin(p,val,color){
-  const html=`<div class="pin" style="--fs:${Math.max(11,12- (3 - Math.min(3, Math.max(0, map.getZoom()-2))))}px;background:${color}">
-    <div><img src="${flagURL(p.cc)}" alt="${p.code}"><strong>${p.code}</strong></div>
-    <div>${val}</div>
-  </div>`;
-  const icon=L.divIcon({html, className:'', iconSize:null});
-  const m=L.marker([p.lat,p.lon],{icon}).addTo(map);
-  markers.push(m);
-  return m;
-}
-
 function clearPins(){markers.forEach(m=>map.removeLayer(m));markers=[];}
+function fmt(v,s){if(v==null)return'–';if(s==='GDP')return(v/1e9).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,".")+'B';if(s==='GDPpc')return Math.round(v).toLocaleString();if(s==='Infl'||s==='Unemp')return (Math.round(v*10)/10)+'%';return v;}
+function trend(a,b){if(a==null||b==null)return'';a=+a;b=+b;if(isNaN(a)||isNaN(b))return'';return Math.abs(a-b)<=Math.abs(b)*.005?'→':a>b?'⬆️':'⬇️';}
+function color(v,min,max,rev){if(v==null||!isFinite(v))return'rgba(200,200,200,.6)';let t=(v-min)/(max-min);t=Math.max(0,Math.min(1,t));if(rev)t=1-t;return`hsl(${120*t},${55+10*t}%,${65-15*t}%)`;}
+function pin(p,val,col){const h=`<div class="pin" style="--fs:${Math.max(10,12-(3-Math.min(3,Math.max(0,map.getZoom()-2))))}px;background:${col}"><img src="${flagURL(p.cc)}"><strong>${p.code}</strong><div>${val}</div></div>`;const ic=L.divIcon({html:h,className:'',iconSize:null});const m=L.marker([p.lat,p.lon],{icon:ic}).addTo(map);markers.push(m);}
+async function wb(cc,i){try{const r=await fetch(`https://api.worldbank.org/v2/country/${cc}/indicator/${i}?format=json&per_page=6&date=2000:2025`);const j=await r.json();return (j[1]||[]).filter(d=>d.value!=null).slice(0,4);}catch{return[];}}
+async function loadYears(){const c=PLACES[0],d=await wb(c.code,WB_IND[statSel.value]);yrSel.innerHTML=d.length?`<option value="0">Latest</option>`:`<option>–</option>`;for(let i=1;i<d.length;i++)yrSel.innerHTML+=`<option value="${i}">Period -${i}</option>`;}
+function updTitle(all){let y='–';for(const k in all){const d=all[k][+yrSel.value];if(d?.date){y=d.date;break;}}document.title=`World Macro — ${y}`;document.querySelector('h1').textContent=`World Macro (${y})`;}
 
-function fmt(v,stat){
-  if(v==null||v==='?') return '–';
-  if(stat==='GDP') return (v/1e9).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,".") + 'B';
-  if(stat==='GDPpc') return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
-  if(stat==='Infl'||stat==='Unemp') return (Math.round(v*10)/10)+'%';
-  return v;
-}
-function trendArrow(lat,prev){
-  if(lat==null||prev==null)return'';
-  const a=Number(lat),b=Number(prev);if(isNaN(a)||isNaN(b))return'';
-  return Math.abs(a-b)<=Math.abs(b)*0.005?' →':a>b?'⬆️':'⬇️';
-}
-function colorScale(val,min,max,reverse=false){
-  if(val==null)return'rgba(200,200,200,0.6)';
-  let t=(val-min)/(max-min); t=Math.max(0, Math.min(1, t));
-  if(reverse) t=1-t; // lower is greener
-  const h=120*t; // 0=red, 120=green
-  const s=50+10*t;
-  const l=65-15*t;
-  return `hsl(${h},${s}%,${l}%)`;
-}
-async function wbFetch(cc,indicator){
-  try{
-    const r=await fetch(`https://api.worldbank.org/v2/country/${cc.toLowerCase()}/indicator/${indicator}?format=json&per_page=6&date=2000:2025`);
-    const j=await r.json();
-    const data=(j&&j[1]||[]).filter(d=>d.value!==null);
-    if(!data.length)return[];
-    return data.slice(0,4);
-  }catch(e){return[];}
-}
-async function loadYears(){
-  const sample=PLACES[0];
-  const data=await wbFetch(sample.code,WB_IND[statSelect.value]);
-  yearSelect.innerHTML='';
-  if(!data.length) {yearSelect.innerHTML=`<option>–</option>`; return;}
-  yearSelect.innerHTML=`<option value="0">Latest</option>`;
-  for(let i=1;i<data.length;i++){yearSelect.innerHTML+=`<option value="${i}">Period -${i}</option>`;}
-}
-function updateTitle(allData){
-  const period = parseInt(yearSelect.value);
-  let year = '–';
-  if(allData && Object.keys(allData).length){
-    for(const c in allData){
-      const d = allData[c][period];
-      if(d && d.date) { year = d.date; break; }
-    }
-  }
-  document.title = `World Macro — ${year}`;
-  document.querySelector('h1').textContent = `World Macro (${year})`;
-}
+// from Code 1: country positions (trimmed only to essential fields)
+const COUNTRIES=[["DZ",28,1.66],["LY",26.34,17.23],["TN",33.8869,9.5375],["EG",26.82,30.8],["MA",32,-5],["ZA",-29,24],
+["US",38,-97],["CA",60,-95],["BR",-10,-55],["AR",-34,-64],["MX",23,-102],["GB",54,-2],["DE",51,9],["FR",46,2],
+["IT",42.8,12.8],["ES",40,-4],["PL",52,20],["RU",60,100],["CN",35,105],["JP",36,138],["IN",20,77],["AU",-27,133]];
+const PLACES=COUNTRIES.map(([c,lat,lon])=>({code:c,cc:c.toLowerCase(),lat,lon}));
+
 async function showStat(){
-  if(!statSelect.value) return;
-  clearPins();
-  const statKey=statSelect.value;
-  const period=parseInt(yearSelect.value);
-  status.textContent=`Loading ${statKey}...`;
-  const vals=[];const allData={};
-  // Pull WB for ALL countries in PLACES (global)
-  for(const p of PLACES){
-    const d=await wbFetch(p.code,WB_IND[statKey]);
-    allData[p.code]=d;
-    const r=d[period]||{};
-    vals.push(r.value);
+  if(!statSel.value)return;
+  clearPins();status.textContent=`Loading ${statSel.value}…`;
+  const stat=statSel.value,per=+yrSel.value;const vals=[],all={};
+  const chunks=[];for(let i=0;i<PLACES.length;i+=10)chunks.push(PLACES.slice(i,i+10));
+  for(const chunk of chunks){
+    const batch=await Promise.all(chunk.map(async p=>{
+      const d=await wb(p.code,WB_IND[stat]);all[p.code]=d;const r=d[per]||{};if(r.value!=null)vals.push(r.value);
+      return {p,d};
+    }));
+    const f=vals.filter(v=>isFinite(v));const mn=f.length?Math.min(...f):0,mx=f.length?Math.max(...f):1;
+    batch.forEach(({p,d})=>{
+      const r=d[per]||{},pr=d[per+1]?.value,v=fmt(r.value,stat)+trend(r.value,pr),rev=REVERSE_GREEN.includes(stat);
+      pin(p,v,color(r.value,mn,mx,rev));
+    });
+    await new Promise(r=>setTimeout(r,150)); // rate limit delay
   }
-  const filtered=vals.filter(v=>v!=null);
-  const min=Math.min(...filtered),max=Math.max(...filtered);
-  for(const p of PLACES){
-    const d=allData[p.code]||[];
-    const r=d[period]||{};
-    const prev=d[period+1]?d[period+1].value:null;
-    const val=fmt(r.value,statKey)+trendArrow(r.value,prev);
-    const rev=REVERSE_GREEN.includes(statKey);
-    placePin(p,val,colorScale(r.value,min,max,rev));
-  }
-  status.textContent='Done.';
-  updateTitle(allData);
+  updTitle(all);status.textContent='Done.';
 }
-statSelect.addEventListener('change',async()=>{
-  if(!statSelect.value) return;
-  await loadYears();
-  yearSelect.value="0";
-  showStat();
-});
-yearSelect.addEventListener('change',showStat);
-map.on('zoomend',()=>{ // subtle font scaling with zoom
-  const z=map.getZoom();document.querySelectorAll('.pin').forEach(p=>p.style.setProperty('--fs',Math.max(10, z*1.5)+'px'));
-});
+
+statSel.addEventListener('change',async()=>{if(!statSel.value)return;await loadYears();yrSel.value='0';showStat();});
+yrSel.addEventListener('change',showStat);
+map.on('zoomend',()=>{const z=map.getZoom();document.querySelectorAll('.pin').forEach(p=>p.style.setProperty('--fs',Math.max(10,z*1.5)+'px'));});
 </script>
 </body>
 </html>
